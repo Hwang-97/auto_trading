@@ -1,0 +1,45 @@
+server:
+  port: 5657
+
+jasypt:
+  encryptor:
+    bean: jasyptStringEncryptor
+    algorithm: PBEWithMD5AndDES
+    pool-size: 2
+    string-output-type: base64
+    key-obtention-iterations: 100000
+
+spring:
+  datasource:
+    # EX ) jdbc:mysql://localhost:{포트번호}/{데이터베이스 이름}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    # ENC(암호화된 정보.)
+    url: ENC(nHZhnxakjgfzWesx28LnS/aDcBVb5OekZRc0wl97CBGovy9JGnG+ofXsvydTs9Qf11Iqnt2oPcM=)
+    username: ENC(ZApxsDkfif5LYLP3qlw8Mg==)
+    password: ENC(6EVKjZXwrzBL+q/bQkGHQg==)
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+
+    # Hibernate Configuration
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+  # paging setting
+  data:
+    web:
+      pageable:
+        default-page-size: 10
+        one-indexed-parameters: true #paging => 1 start
+
+logging:
+  level:
+    org.hibernate:
+      type:
+        descriptor.sql: trace
