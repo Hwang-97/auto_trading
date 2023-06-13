@@ -1,8 +1,8 @@
 const path = require('path');
 module.exports = {
     pwa: {
-        name: "pms",
-        start_url: "/",
+        name: "autoTrading",
+        start_url: "/login",
     },
     configureWebpack: {
         resolve: {

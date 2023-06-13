@@ -1,6 +1,7 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
-import Template from "@components/Template"
+import beforeEach from "@/router/beforeEach";
+import LoginComponent from "@/views/Login";
 
 Vue.use(VueRouter);
 
@@ -21,15 +22,20 @@ VueRouter.prototype.replace = function replace( location ) {
 };
 
 const routes = [
-    {
-        path: "/",
-        component:Template
-    }
-]
+  {
+    path: '/login',
+    name: 'Login',
+    component: LoginComponent
+  },
+  // 다른 경로와 컴포넌트 추가
+];
 
 const router = new VueRouter({
-    mode: "history",
-    routes,
+  mode: 'history',
+  base: process.env.BASE_URL,
+  routes
 });
+
+router.beforeEach(beforeEach);
 
 export default router;

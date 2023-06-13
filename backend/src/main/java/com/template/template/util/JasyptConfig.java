@@ -39,7 +39,7 @@ public class JasyptConfig {
     encryptor.setStringOutputType(stringOutputType);
     encryptor.setKeyObtentionIterations(keyObtentionIterations);
 
-    String plainText = "jdbc:mysql://hhw97.duckdns.org:3306/auto_trading?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8";
+    String plainText = "";
     String encryptedText = encryptor.encrypt(plainText);
     String decryptedText = encryptor.decrypt(encryptedText);
 

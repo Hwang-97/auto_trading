@@ -13,24 +13,28 @@ spring:
   datasource:
     # EX ) jdbc:mysql://localhost:{포트번호}/{데이터베이스 이름}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     # ENC(암호화된 정보.)
-    url: ENC(nHZhnxakjgfzWesx28LnS/aDcBVb5OekZRc0wl97CBGovy9JGnG+ofXsvydTs9Qf11Iqnt2oPcM=)
-    username: ENC(ZApxsDkfif5LYLP3qlw8Mg==)
-    password: ENC(6EVKjZXwrzBL+q/bQkGHQg==)
+    url: ENC(6SpS+pHkA4uKTpdENgT/eYpsHBtslENbGMNVf21PuWCcfGxJ9+cDgyJhIzj9TRQw8eyPjGt/OmHk725ttmh3iB3YQFbZujLjVseBXJHPvYDMhU5OpjIDQw+v/8WakfLDsje2anOS0VHNh33ROq5tb8NH1OotbNzQ)
+    username: ENC(4b6x5K50CWeQuEYkJGWFdg==)
+    password: ENC(TGUtAvtiFZ/JN4XKXhNAcA==)
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+  #순환참조.
+  main:
+    allow-circular-references: true
 
   # JPA Configuration
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: true
     hibernate:
-      ddl-auto: none
+      ddl-auto: create
 
     # Hibernate Configuration
     properties:
       hibernate:
         format_sql: true
         use_sql_comments: true
-
+        dialect: org.hibernate.dialect.MySQL5InnoDBDialect
   # paging setting
   data:
     web:

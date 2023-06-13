@@ -23,6 +23,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security:2.7.12'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.h2database:h2'
@@ -40,6 +41,13 @@ dependencies {
 	implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.4'
 	// 실제 query 확인.
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.5.8'
+
+	// Upbit API 관련 라이브러리
+ 	implementation 'com.google.code.gson:gson:2.8.7'
+ 	implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+
+ 	// JSON Web Token (JWT) 관련 라이브러리
+ 	implementation 'io.jsonwebtoken:jjwt:0.9.1'
 	/* 프로젝트 생성 이후 추가된 lib */
 }
 

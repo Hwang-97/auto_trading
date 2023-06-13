@@ -1,8 +1,12 @@
-import store from "./index";
+import store from '../store';
 
-export default async (to, from, next) => {
-    // to : 이동할 url
-    // from : 현재 url
-    // next : to에서 지정한 url로 이동하기 위해 꼭 호출해야 하는 함수
-    console.log();
+export default function beforeEach(to, from, next) {
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const isAuthenticated = store.getters['user/isAuthenticated'];
+
+  if (requiresAuth && !isAuthenticated) {
+    next('/login');
+  } else {
+    next();
+  }
 }
