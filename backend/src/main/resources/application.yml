@@ -27,7 +27,7 @@ spring:
     database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: none
 
     # Hibernate Configuration
     properties:

@@ -1,4 +1,4 @@
-package com.template.template.util;
+package com.template.template.global.common;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;

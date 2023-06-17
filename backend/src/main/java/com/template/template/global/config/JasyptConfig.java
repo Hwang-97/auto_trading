@@ -1,5 +1,7 @@
-package com.template.template.util;
+package com.template.template.global.config;
 
+import com.template.template.global.common.Log;
+import com.template.template.global.util.CustomUtil;
 import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 import org.jasypt.encryption.StringEncryptor;
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
@@ -9,7 +11,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -32,10 +36,12 @@ public class JasyptConfig {
 
   @Bean
   public StringEncryptor jasyptStringEncryptor() {
+    String pw = readFile("pw.jasyptpw");
+    log.info("pw : {}",pw);
     PooledPBEStringEncryptor encryptor = new PooledPBEStringEncryptor();
     encryptor.setPoolSize(poolSize);
     encryptor.setAlgorithm(algorithm);
-    encryptor.setPassword(getJasyptEncryptorPassword());
+    encryptor.setPassword(pw);
     encryptor.setStringOutputType(stringOutputType);
     encryptor.setKeyObtentionIterations(keyObtentionIterations);
 
@@ -50,14 +56,19 @@ public class JasyptConfig {
 
   }
 
-  private String getJasyptEncryptorPassword() {
-    try {
-      ClassPathResource resource = new ClassPathResource("pw.jasyptpw");
-      return Files.readAllLines(Paths.get(resource.getURI())).stream()
-          .collect(Collectors.joining(""));
-    } catch (IOException e) {
-      throw new RuntimeException("Not found Jasypt password file.");
-    }
+  public String readFile(String fileName) {
+      try {
+          Resource resource = new ClassPathResource(fileName);
+          if (!resource.exists()) {
+              throw new FileNotFoundException("File not found: " + fileName);
+          }
+          String result = Files.readAllLines(Paths.get(resource.getURI()))
+                              .stream()
+                              .collect(Collectors.joining(""));
+          return result;
+      } catch (IOException e) {
+          throw new RuntimeException("Error reading file: " + fileName, e);
+      }
   }
 
 }

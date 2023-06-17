@@ -1,4 +1,4 @@
-package com.template.template.util;
+package com.template.template.global.common;
 
 import lombok.extern.slf4j.Slf4j;
 

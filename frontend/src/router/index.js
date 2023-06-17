@@ -25,6 +25,9 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
+    meta: {
+        requiresAuth : true
+    },
     component: LoginComponent
   },
   // 다른 경로와 컴포넌트 추가

@@ -1,7 +1,6 @@
-package com.template.template.entity;
+package com.template.template.domain.user.entity;
 
 import lombok.Data;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
