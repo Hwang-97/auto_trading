@@ -1,5 +1,6 @@
 server:
   port: 5657
+  forward-headers-strategy: native
 
 jasypt:
   encryptor:

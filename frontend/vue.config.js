@@ -1,9 +1,5 @@
 const path = require('path');
 module.exports = {
-    pwa: {
-        name: "autoTrading",
-        start_url: "/login",
-    },
     configureWebpack: {
         resolve: {
             // 경로에서 확장자 생략 설정
@@ -12,6 +8,8 @@ module.exports = {
                 '@': path.join(__dirname, 'src/'),
                 '@components': path.join(__dirname, 'src/components'),
                 '@assets': path.join(__dirname, 'src/assets'),
+                '@views': path.join(__dirname, 'src/views'),
+                '@common': path.join(__dirname, 'src/common'),
             }
         }
     },
@@ -25,16 +23,16 @@ module.exports = {
                 return options;
             });
     },
-    css: {
-        loaderOptions: {
-            scss: {
-                additionalData: `
-          @import "${"@/style/reset.scss"}";
-          @import "${"@/style/variable.scss"}";
-        `,
-            },
-        }
-    },
+    // css: {
+    //     loaderOptions: {
+    //         scss: {
+    //             additionalData: `
+    //       @import "${"@/style/reset.scss"}";
+    //       @import "${"@/style/variable.scss"}";
+    //     `,
+    //         },
+    //     }
+    // },
     // 개발 서버 옵션
     devServer: {
         host: 'localhost',

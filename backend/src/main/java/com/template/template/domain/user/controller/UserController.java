@@ -29,7 +29,7 @@ public class UserController extends UserException {
         return ResponseEntity.ok(checkLogin);
     }
 
-    @PostMapping("/signup")
+    @PostMapping(value="/signup")
     public ResponseEntity<Boolean> signUp(@RequestBody UserDTO user,
                                           @RequestBody String passwd) throws UserException {
         Boolean checkLogin = false;

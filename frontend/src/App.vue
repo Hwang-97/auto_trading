@@ -3,17 +3,14 @@
 </template>
 
 <script>
-import HelloWorld from './components/Template.vue'
 
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
+  name: 'App'
 }
 </script>
 
-<style>
+<style lang="scss">
+//@import 'node_modules/bootstrap-vue/src/index.scss' ;
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
