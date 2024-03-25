@@ -28,12 +28,7 @@
 </template>
 
 <script>
-import axios from "axios";
 import SignUp from "@views/SignUp";
-
-const api = axios.create({
-  baseURL: 'http://localhost:5657'
-});
 export default {
   data() {
     return {
@@ -47,7 +42,7 @@ export default {
        formTransform: 'none',
        formTransition: 'none',
        // 특정 아이피일 경우에만 동작하도록 처리할 변수
-       specialIP: '1232',
+       specialIP: '58.140.47.254',
     };
   },
   components: {
@@ -75,7 +70,6 @@ export default {
       const maxX = window.innerWidth;
       const maxY = window.innerHeight;
 
-      // 공의 반지름을 고려하여 x, y 좌표를 설정
       const randomX = Math.floor(Math.random() * (maxX) - 1000);
       const randomY = Math.floor(Math.random() * (maxY) - 400);
 
