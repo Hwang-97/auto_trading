@@ -6,3 +6,5 @@ pandas
 pandas_ta
 schedule
 streamlit
+mysql-connector-python
+python-dotenv
