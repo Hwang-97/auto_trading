@@ -4,7 +4,7 @@ auto_trading made using python
 #필요한 패키지 download
 pip3 install -r requirements.txt
 
-#API KEY 입력
+#API KEY & db 정보 입력
 vim .env
 
 #background 실행
