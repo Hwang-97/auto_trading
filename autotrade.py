@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
 import pyupbit
 import pandas as pd
 import pandas_ta as ta
@@ -10,88 +9,113 @@ import schedule
 import time
 import requests
 from datetime import datetime
-import sqlite3
+import logging
+import db_utils
+
+# 환경 변수 로드
+load_dotenv()
 
 # Setup
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 upbit = pyupbit.Upbit(os.getenv("UPBIT_ACCESS_KEY"), os.getenv("UPBIT_SECRET_KEY"))
+db_host = os.getenv('DB_HOST')
+db_user = os.getenv('DB_USER')
+db_password = os.getenv('DB_PASSWORD')
+db_name = os.getenv('DB_NAME')
+db_port = os.getenv('DB_PORT')
 
-def initialize_db(db_path='trading_decisions.sqlite'):
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS decisions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp DATETIME,
-                decision TEXT,
-                percentage REAL,
-                reason TEXT,
-                btc_balance REAL,
-                krw_balance REAL,
-                btc_avg_buy_price REAL,
-                btc_krw_price REAL
-            );
-        ''')
-        conn.commit()
+# 데이터베이스 연결
+connection = db_utils.create_db_connection(db_host, db_user, db_password, db_name, db_port)
+
+def initialize_db():
+    # 테이블 생성
+    create_table_query = """
+    CREATE TABLE IF NOT EXISTS decisions (
+        id BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY COMMENT 'pk',
+        timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '작성',
+        decision TEXT NOT NULL COMMENT '[0:hold, 1:buy, 2:sell] action',
+        percentage DOUBLE NOT NULL DEFAULT 0 COMMENT '코인 비율 (코인/현금)',
+        reason TEXT NOT NULL COMMENT '매매 판단 기준',
+        coin_name TEXT NOT NULL COMMENT 'coin이름 ex)BTC',
+        coin_balance DOUBLE NOT NULL DEFAULT 0 COMMENT '가지고 있는 코인 개수',
+        krw_balance DOUBLE NOT NULL DEFAULT 0 COMMENT '가지고 있는 현금',
+        coin_avg_buy_price DOUBLE NOT NULL DEFAULT 0 COMMENT '가지고 있는 코인의 평균 구매가',
+        coin_krw_price DOUBLE NOT NULL DEFAULT 0 COMMENT '가지고 있는 총 금액(coin의 총 가격 + 가지고 있는 현금)'
+    );
+    """
+    db_utils.execute_query(connection, create_table_query)
 
 def save_decision_to_db(decision, current_status):
-    db_path = 'trading_decisions.sqlite'
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-    
-        # Parsing current_status from JSON to Python dict
-        status_dict = json.loads(current_status)
-        current_price = pyupbit.get_orderbook(ticker="KRW-BTC")['orderbook_units'][0]["ask_price"]
+    try:
+        with connection.cursor() as cursor:
+            # Parsing current_status from JSON to Python dict
+            status_dict = json.loads(current_status)
+            
+            # Get the current price of the coin
+            current_price = pyupbit.get_current_price("KRW-BTC")  # 이 부분을 수정해야 합니다. 코인 이름에 따라 변경해야 할 수 있습니다.
+            
+            # Preparing data for insertion
+            data_to_insert = (
+                decision.get('decision'),
+                decision.get('percentage', 100),  # Defaulting to 100 if not provided
+                decision.get('reason', ''),  # Defaulting to an empty string if not provided
+                'KRW-BTC',  # 코인 이름 추가
+                status_dict.get('btc_balance'),
+                status_dict.get('krw_balance'),
+                status_dict.get('btc_avg_buy_price'),
+                current_price  # 코인의 현재 가격 추가
+            )
+            
+            print(data_to_insert)
+            # Inserting data into the database
+            sql = """
+                INSERT INTO decisions (timestamp, decision, percentage, reason, coin_name, coin_balance, krw_balance, coin_avg_buy_price, coin_krw_price)
+                VALUES (NOW(), %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, data_to_insert)
         
-        # Preparing data for insertion
-        data_to_insert = (
-            decision.get('decision'),
-            decision.get('percentage', 100),  # Defaulting to 100 if not provided
-            decision.get('reason', ''),  # Defaulting to an empty string if not provided
-            status_dict.get('btc_balance'),
-            status_dict.get('krw_balance'),
-            status_dict.get('btc_avg_buy_price'),
-            current_price
-        )
+        # Commit the transaction
+        connection.commit()
         
-        # Inserting data into the database
-        cursor.execute('''
-            INSERT INTO decisions (timestamp, decision, percentage, reason, btc_balance, krw_balance, btc_avg_buy_price, btc_krw_price)
-            VALUES (datetime('now', 'localtime'), ?, ?, ?, ?, ?, ?, ?)
-        ''', data_to_insert)
+    except Exception as e:
+        print(f"Failed to save decision to DB: {e}")
+
+
     
-        conn.commit()
 
-def fetch_last_decisions(db_path='trading_decisions.sqlite', num_decisions=10):
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT timestamp, decision, percentage, reason, btc_balance, krw_balance, btc_avg_buy_price FROM decisions
-            ORDER BY timestamp DESC
-            LIMIT ?
-        ''', (num_decisions,))
-        decisions = cursor.fetchall()
+def fetch_last_decisions(num_decisions=10):
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                SELECT timestamp, decision, percentage, reason, coin_balance, krw_balance, coin_avg_buy_price FROM decisions
+                ORDER BY timestamp DESC
+                LIMIT %s
+            """
+            cursor.execute(sql, (num_decisions,))
+            decisions = cursor.fetchall()
 
-        if decisions:
-            formatted_decisions = []
-            for decision in decisions:
-                # Converting timestamp to milliseconds since the Unix epoch
-                ts = datetime.strptime(decision[0], "%Y-%m-%d %H:%M:%S")
-                ts_millis = int(ts.timestamp() * 1000)
-                
-                formatted_decision = {
-                    "timestamp": ts_millis,
-                    "decision": decision[1],
-                    "percentage": decision[2],
-                    "reason": decision[3],
-                    "btc_balance": decision[4],
-                    "krw_balance": decision[5],
-                    "btc_avg_buy_price": decision[6]
-                }
-                formatted_decisions.append(str(formatted_decision))
-            return "\n".join(formatted_decisions)
-        else:
-            return "No decisions found."
+            if decisions:
+                formatted_decisions = []
+                for decision in decisions:
+                    # Converting timestamp to milliseconds since the Unix epoch
+                    ts = decision[0].timestamp() * 1000
+                    formatted_decision = {
+                        "timestamp": int(ts),
+                        "decision": decision[1],
+                        "percentage": decision[2],
+                        "reason": decision[3],
+                        "btc_balance": decision[4],  # 수정된 부분
+                        "krw_balance": decision[5],
+                        "btc_avg_buy_price": decision[6]
+                    }
+                    formatted_decisions.append(str(formatted_decision))
+                return "\n".join(formatted_decisions)
+            else:
+                return "No decisions found."
+    except Exception as e:
+        print(f"Failed to fetch last decisions: {e}")
+
+
 
 def get_current_status():
     orderbook = pyupbit.get_orderbook(ticker="KRW-BTC")
@@ -276,15 +300,16 @@ def make_decision_and_execute():
         last_decisions = fetch_last_decisions()
         fear_and_greed = fetch_fear_and_greed_index(limit=30)
         current_status = get_current_status()
-    except Exception as e:
-        print(f"Error: {e}")
-    else:
+        
+        # Ensure last_decisions is in string format
+        last_decisions_str = last_decisions if isinstance(last_decisions, str) else str(last_decisions)
+        
         max_retries = 5
         retry_delay_seconds = 5
         decision = None
         for attempt in range(max_retries):
             try:
-                advice = analyze_data_with_gpt4(news_data, data_json, last_decisions, fear_and_greed, current_status)
+                advice = analyze_data_with_gpt4(news_data, data_json, last_decisions_str, fear_and_greed, current_status)
                 decision = json.loads(advice)
                 break
             except json.JSONDecodeError as e:
@@ -307,19 +332,24 @@ def make_decision_and_execute():
             except Exception as e:
                 print(f"Failed to execute the decision or save to DB: {e}")
 
+    except Exception as e:
+        print(f"Error: {e}")
+
+
 if __name__ == "__main__":
     initialize_db()
+    
     #testing
-    # schedule.every().minute.do(make_decision_and_execute)
+    schedule.every().minute.do(make_decision_and_execute)
 
-    # Schedule the task to run at 00:01
-    schedule.every().day.at("00:01").do(make_decision_and_execute)
+    # # Schedule the task to run at 00:01
+    # schedule.every().day.at("00:01").do(make_decision_and_execute)
 
-    # Schedule the task to run at 08:01
-    schedule.every().day.at("08:01").do(make_decision_and_execute)
+    # # Schedule the task to run at 08:01
+    # schedule.every().day.at("08:01").do(make_decision_and_execute)
 
-    # Schedule the task to run at 16:01
-    schedule.every().day.at("16:01").do(make_decision_and_execute)
+    # # Schedule the task to run at 16:01
+    # schedule.every().day.at("16:01").do(make_decision_and_execute)
 
     while True:
         schedule.run_pending()
