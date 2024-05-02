@@ -1,8 +1,0 @@
-.cache/
-.idea/
-.DS_Store/
-.env
-test.py
-python_memo.txt
-__pycache__
-db_log.log
