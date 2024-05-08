@@ -7,3 +7,6 @@ python_memo.txt
 __pycache__
 db_log.log
 output.log
+.DS_Store
+myenv/
+training_log.log
