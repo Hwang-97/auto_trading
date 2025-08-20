@@ -5,3 +5,86 @@ node_modules/
 dist/
 pw.jasyptpw
 .DS_Store
+
+# 환경 설정 파일
+.env
+.env.local
+.env.*.local
+
+# Gemini 개발 설정 (개발용)
+.gemini/
+todos/
+scripts/
+
+# Python 관련
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 가상환경
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# 데이터베이스 파일
+*.db
+*.sqlite3
+data/databases/
+
+# 로그 파일
+logs/
+*.log
+
+# 데이터 파일
+data/raw/
+data/processed/
+data/exports/
+*.xlsx
+*.csv
+*.json
+
+# IDE 설정
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS 파일
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 임시 파일
+temp/
+tmp/
+*.tmp
+
+# 설정 백업
+config/*.bak

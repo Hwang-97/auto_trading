@@ -1,0 +1,14 @@
+# Core Libraries
+sqlalchemy
+pandas
+finance-datareader
+openpyxl
+beautifulsoup4
+lxml
+plotly
+
+# Scheduling
+apscheduler
+
+# File System Monitoring
+watchdog
