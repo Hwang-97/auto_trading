@@ -1,0 +1,94 @@
+# MemeNews 메인 설정 파일
+
+app:
+  name: "MemeNews"
+  version: "1.0.0"
+  debug: false
+  timezone: "Asia/Seoul"
+
+# 환경 변수 키 이름
+env_keys:
+  # AI API
+  gemini_api_key: "GEMINI_API_KEY"
+  openai_api_key: "OPENAI_API_KEY"
+
+  # 플랫폼 API
+  youtube_api_key: "YOUTUBE_API_KEY"
+  youtube_client_id: "YOUTUBE_CLIENT_ID"
+  youtube_client_secret: "YOUTUBE_CLIENT_SECRET"
+  youtube_refresh_token: "YOUTUBE_REFRESH_TOKEN"
+
+  tiktok_api_key: "TIKTOK_API_KEY"
+  tiktok_access_token: "TIKTOK_ACCESS_TOKEN"
+  tiktok_open_id: "TIKTOK_OPEN_ID"
+
+  instagram_access_token: "INSTAGRAM_ACCESS_TOKEN"
+  instagram_account_id: "INSTAGRAM_ACCOUNT_ID"
+
+  # 알림
+  slack_webhook: "SLACK_WEBHOOK_URL"
+  discord_webhook: "DISCORD_WEBHOOK_URL"
+
+# AI 모델 설정
+ai:
+  gemini:
+    model: "gemini-1.5-flash"
+    max_tokens: 2048
+    temperature: 0.8
+
+# 기본 출력 경로
+paths:
+  output_dir: "output"
+  temp_dir: "temp"
+  assets_dir: "assets"
+  templates_dir: "templates"
+  fonts_dir: "assets/fonts"
+
+  # 채널별 출력 디렉토리
+  channel_output:
+    daily_meme: "output/daily_meme"
+    trend_meme: "output/trend_meme"
+    it_meme: "output/it_meme"
+
+# 데이터베이스 경로
+database:
+  type: "sqlite"
+  path: "data/memenews.db"
+
+  # 테이블
+  tables:
+    contents: "contents"        # 생성된 콘텐츠
+    uploads: "uploads"          # 업로드 기록
+    analytics: "analytics"      # 성과 데이터
+    trends: "trends"            # 트렌드 기록
+
+# 로그 설정
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+
+  # 파일 로그
+  file:
+    enabled: true
+    path: "logs/memenews.log"
+    max_size_mb: 10
+    backup_count: 5
+
+  # 콘솔 로그
+  console:
+    enabled: true
+    colorize: true
+
+# 알림 설정
+notification:
+  enabled: true
+
+  # 알림 이벤트
+  events:
+    on_success: true      # 업로드 성공 시
+    on_failure: true      # 실패 시
+    on_daily_summary: true  # 일일 요약
+
+  channels:
+    - slack
+    - discord

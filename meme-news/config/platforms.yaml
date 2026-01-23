@@ -1,0 +1,224 @@
+# 플랫폼 스펙 설정
+
+platforms:
+  # YouTube / YouTube Shorts
+  youtube:
+    enabled: true
+    name: "YouTube"
+
+    # 영상 스펙
+    video:
+      resolution: "1080x1920"   # 세로형 (Shorts)
+      width: 1080
+      height: 1920
+      fps: 30
+      codec: "h264"
+      format: "mp4"
+      bitrate: "8M"
+
+      # 길이 제한
+      duration:
+        min: 15       # 최소 15초
+        max: 60       # 최대 60초 (Shorts)
+        optimal: 30   # 권장 30초
+
+    # 썸네일 스펙
+    thumbnail:
+      width: 1280
+      height: 720
+      format: "jpg"
+      max_size_mb: 2
+
+    # 메타데이터
+    metadata:
+      title_max_length: 100
+      description_max_length: 5000
+      tags_max_count: 500
+
+    # 해시태그 설정
+    hashtags:
+      max_count: 15
+      required:
+        - "#Shorts"
+      default:
+        - "#밈"
+        - "#meme"
+        - "#shorts"
+        - "#유머"
+        - "#웃긴영상"
+
+    # 업로드 설정
+    upload:
+      category_id: "22"         # People & Blogs
+      privacy_status: "public"
+      made_for_kids: false
+      default_language: "ko"
+
+    # API 설정
+    api:
+      version: "v3"
+      scopes:
+        - "https://www.googleapis.com/auth/youtube.upload"
+        - "https://www.googleapis.com/auth/youtube"
+
+  # TikTok
+  tiktok:
+    enabled: true
+    name: "TikTok"
+
+    # 영상 스펙
+    video:
+      resolution: "1080x1920"
+      width: 1080
+      height: 1920
+      fps: 30
+      codec: "h264"
+      format: "mp4"
+      bitrate: "6M"
+
+      duration:
+        min: 15       # 최소 15초
+        max: 180      # 최대 3분
+        optimal: 30   # 권장 30초
+
+    # 메타데이터
+    metadata:
+      caption_max_length: 2200
+
+    # 해시태그 설정 (5개 이하 권장)
+    hashtags:
+      max_count: 5
+      required:
+        - "#fyp"
+      default:
+        - "#fyp"
+        - "#밈"
+        - "#틱톡"
+        - "#웃김"
+
+    # 업로드 설정
+    upload:
+      privacy_level: "PUBLIC_TO_EVERYONE"
+      disable_duet: false
+      disable_comment: false
+      disable_stitch: false
+
+    # API 설정
+    api:
+      base_url: "https://open.tiktokapis.com/v2"
+
+  # Instagram Reels
+  instagram:
+    enabled: true
+    name: "Instagram"
+
+    # 영상 스펙 (Reels)
+    video:
+      resolution: "1080x1920"
+      width: 1080
+      height: 1920
+      fps: 30
+      codec: "h264"
+      format: "mp4"
+      bitrate: "6M"
+
+      duration:
+        min: 15       # 최소 15초
+        max: 90       # 최대 90초
+        optimal: 30   # 권장 30초
+
+    # 피드 이미지 스펙
+    image:
+      resolution: "1080x1080"
+      width: 1080
+      height: 1080
+      format: "jpg"
+
+    # 메타데이터
+    metadata:
+      caption_max_length: 2200
+
+    # 해시태그 설정 (30개 이하)
+    hashtags:
+      max_count: 30
+      optimal_count: 15   # 권장 15개
+      required: []
+      default:
+        - "#밈"
+        - "#meme"
+        - "#reels"
+        - "#릴스"
+        - "#인스타그램"
+        - "#웃긴영상"
+        - "#유머"
+        - "#공감"
+        - "#일상"
+        - "#daily"
+
+    # 업로드 설정
+    upload:
+      media_type: "REELS"
+
+    # API 설정
+    api:
+      version: "v18.0"
+      base_url: "https://graph.facebook.com"
+
+# 플랫폼별 최적 업로드 시간
+optimal_posting_times:
+  youtube:
+    weekday:
+      - "09:00"
+      - "12:00"
+      - "18:00"
+      - "21:00"
+    weekend:
+      - "10:00"
+      - "14:00"
+      - "20:00"
+
+  tiktok:
+    weekday:
+      - "07:00"
+      - "12:00"
+      - "19:00"
+      - "22:00"
+    weekend:
+      - "09:00"
+      - "12:00"
+      - "19:00"
+      - "22:00"
+
+  instagram:
+    weekday:
+      - "08:00"
+      - "12:00"
+      - "17:00"
+      - "21:00"
+    weekend:
+      - "10:00"
+      - "14:00"
+      - "20:00"
+
+# 공통 영상 설정
+video_defaults:
+  # 오디오 설정
+  audio:
+    codec: "aac"
+    bitrate: "128k"
+    sample_rate: 44100
+
+  # TTS 설정
+  tts:
+    language: "ko"
+    speed: 1.0
+
+  # 자막 설정
+  subtitle:
+    enabled: true
+    font: "NanumGothic"
+    font_size: 48
+    color: "white"
+    stroke_color: "black"
+    stroke_width: 3
+    position: "bottom"

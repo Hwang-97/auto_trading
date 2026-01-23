@@ -1,0 +1,47 @@
+# MemeNews Dependencies
+
+# AI/LLM
+google-generativeai>=0.3.0
+
+# RSS/Content Parsing
+feedparser>=6.0.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+
+# Image Processing
+Pillow>=10.0.0
+
+# Text-to-Speech
+gTTS>=2.4.0
+
+# YouTube API
+google-api-python-client>=2.100.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.0
+
+# Scheduling
+APScheduler>=3.10.0
+
+# Configuration
+PyYAML>=6.0.0
+python-dotenv>=1.0.0
+
+# Async HTTP
+aiohttp>=3.9.0
+
+# Web Admin Panel
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+jinja2>=3.1.0
+itsdangerous>=2.1.0
+starlette>=0.27.0
+
+# Security/Encryption
+cryptography>=41.0.0
+
+# Development/Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+flake8>=6.0.0

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}스케줄러 - MemeNews Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">스케줄러 관리</h2>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-power me-2"></i>스케줄러 상태
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        {% if status.running %}
+                        <span class="badge bg-success fs-5 p-3">
+                            <i class="bi bi-check-circle me-2"></i>실행중
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary fs-5 p-3">
+                            <i class="bi bi-pause-circle me-2"></i>중지됨
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {% if status.running %}
+                        <button class="btn btn-danger" onclick="controlScheduler('stop')">
+                            <i class="bi bi-stop-fill me-2"></i>중지
+                        </button>
+                        {% else %}
+                        <button class="btn btn-success" onclick="controlScheduler('start')">
+                            <i class="bi bi-play-fill me-2"></i>시작
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-clock-history me-2"></i>실행 정보
+                </div>
+                <div class="card-body">
+                    <p>
+                        <strong>마지막 실행:</strong><br>
+                        {{ status.last_run or '없음' }}
+                    </p>
+                    <p class="mb-0">
+                        <strong>다음 실행:</strong><br>
+                        {{ status.next_run or '예정 없음' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-calendar3 me-2"></i>스케줄 목록
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>시간</th>
+                                <th>채널</th>
+                                <th>플랫폼</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in schedule %}
+                            <tr>
+                                <td><code>{{ item.time }}</code></td>
+                                <td>{{ item.channel_name }}</td>
+                                <td>
+                                    {% for platform in item.platforms %}
+                                    <span class="badge bg-primary me-1">{{ platform }}</span>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    {% if not schedule %}
+                    <p class="text-muted text-center">설정된 스케줄이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function controlScheduler(action) {
+    try {
+        const response = await fetch(`/scheduler/${action}`, {method: 'POST'});
+        const result = await response.json();
+
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('오류가 발생했습니다.');
+        }
+    } catch (e) {
+        alert('요청 실패: ' + e.message);
+    }
+}
+</script>
+{% endblock %}

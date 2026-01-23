@@ -1,0 +1,199 @@
+# 콘텐츠 소스 설정
+
+sources:
+  # 일상 카테고리 - AI 생성
+  daily:
+    type: "ai_generated"
+    description: "AI가 주제를 기반으로 밈 생성"
+
+    # 주제 리스트
+    topics:
+      - name: "직장생활"
+        keywords:
+          - "출근"
+          - "퇴근"
+          - "야근"
+          - "회의"
+          - "상사"
+          - "월급"
+          - "점심"
+          - "칼퇴"
+          - "주말"
+          - "월요병"
+        weight: 1.0
+
+      - name: "연애"
+        keywords:
+          - "썸"
+          - "고백"
+          - "데이트"
+          - "카톡"
+          - "읽씹"
+          - "연락"
+          - "기념일"
+          - "선물"
+        weight: 0.8
+
+      - name: "가족"
+        keywords:
+          - "부모님"
+          - "엄마"
+          - "아빠"
+          - "명절"
+          - "용돈"
+          - "잔소리"
+          - "결혼"
+        weight: 0.6
+
+      - name: "친구"
+        keywords:
+          - "약속"
+          - "모임"
+          - "술"
+          - "카페"
+          - "여행"
+          - "연락"
+          - "우정"
+        weight: 0.7
+
+      - name: "일상"
+        keywords:
+          - "알람"
+          - "배달"
+          - "넷플릭스"
+          - "유튜브"
+          - "다이어트"
+          - "운동"
+          - "잠"
+          - "주말"
+          - "월요일"
+        weight: 1.0
+
+  # 트렌드 카테고리 - 실시간 트렌드
+  trend:
+    type: "realtime_trend"
+    description: "실시간 트렌드 기반 밈 생성"
+
+    # 트렌드 소스
+    trend_sources:
+      - name: "google_trends"
+        enabled: true
+        region: "KR"
+        language: "ko"
+        update_interval: 3600  # 1시간
+
+      - name: "naver_datalab"
+        enabled: true
+        url: "https://datalab.naver.com/keyword/realtimeList.naver"
+        update_interval: 1800  # 30분
+
+      - name: "twitter_trends"
+        enabled: false  # API 제한으로 비활성화
+        region: "KR"
+
+    # 필터링
+    filters:
+      min_search_volume: 1000
+      exclude_adult: true
+      exclude_political: true
+
+  # IT 카테고리 - RSS 피드
+  it:
+    type: "rss_feed"
+    description: "IT 뉴스 RSS 피드 기반 밈 생성"
+
+    feeds:
+      - name: "네이버 IT뉴스"
+        url: "https://news.naver.com/main/list.naver?mode=LSD&mid=sec&sid1=105"
+        type: "crawl"
+        enabled: true
+        update_interval: 1800
+
+      - name: "ZDNet Korea"
+        url: "https://zdnet.co.kr/rss/all_news.xml"
+        type: "rss"
+        enabled: true
+        update_interval: 3600
+
+      - name: "ITWorld Korea"
+        url: "https://www.itworld.co.kr/rss/feed.xml"
+        type: "rss"
+        enabled: true
+        update_interval: 3600
+
+      - name: "블로터"
+        url: "https://www.bloter.net/feed"
+        type: "rss"
+        enabled: true
+        update_interval: 3600
+
+  # 주식 카테고리 - RSS 피드
+  stock:
+    type: "rss_feed"
+    description: "주식/경제 뉴스 기반 밈 생성"
+
+    feeds:
+      - name: "네이버 주식뉴스"
+        url: "https://news.naver.com/main/list.naver?mode=LSD&mid=sec&sid1=101"
+        type: "crawl"
+        enabled: true
+        update_interval: 1800
+
+      - name: "한경 증권"
+        url: "https://www.hankyung.com/feed/stock"
+        type: "rss"
+        enabled: true
+        update_interval: 3600
+
+# 키워드 필터링
+keyword_filters:
+  # 포함해야 할 키워드 (OR 조건)
+  include:
+    daily: []  # 일상은 필터 없음
+    trend: []  # 트렌드는 자동 선별
+    it:
+      - "AI"
+      - "인공지능"
+      - "애플"
+      - "구글"
+      - "삼성"
+      - "개발"
+      - "프로그래밍"
+      - "앱"
+      - "서비스"
+      - "출시"
+    stock:
+      - "주가"
+      - "상승"
+      - "하락"
+      - "코스피"
+      - "코스닥"
+      - "투자"
+
+  # 제외해야 할 키워드
+  exclude:
+    common:
+      - "광고"
+      - "후원"
+      - "협찬"
+      - "홍보"
+      - "19금"
+      - "성인"
+
+    # 민감한 키워드
+    sensitive:
+      - "사망"
+      - "자살"
+      - "폭력"
+      - "혐오"
+      - "차별"
+      - "정치"
+      - "선거"
+
+# 크롤링 설정
+crawl_settings:
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  request_delay: 2        # 요청 간 딜레이 (초)
+  timeout: 30             # 타임아웃 (초)
+  max_retries: 3          # 최대 재시도
+  respect_robots_txt: true

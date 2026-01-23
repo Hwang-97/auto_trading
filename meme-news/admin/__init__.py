@@ -1,0 +1,1 @@
+"""MemeNews Admin Panel"""

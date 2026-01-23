@@ -1,0 +1,8 @@
+{
+  "admin": {
+    "password_hash": "59af998c2d7843a1cd26c4e342e273fc$a210597b5c20916ce7fd2a77be3264663049086d2f3a2b3822d80490e7b876cb",
+    "salt": "ba2b12ff23997160612b9a928c97dfad",
+    "created_at": "2026-01-23T11:22:50.615159",
+    "is_default_password": true
+  }
+}

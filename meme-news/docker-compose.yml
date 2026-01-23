@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  memenews:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: memenews
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./config:/app/config
+    environment:
+      - TZ=Asia/Seoul
+      - SECRET_KEY=${SECRET_KEY:-change_me_in_production}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-memenews123!}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # 스케줄러 서비스 (백그라운드 작업)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: memenews-scheduler
+    restart: unless-stopped
+    command: ["python", "main.py", "--schedule"]
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./config:/app/config
+    environment:
+      - TZ=Asia/Seoul
+    depends_on:
+      - memenews
+
+volumes:
+  memenews-data:
