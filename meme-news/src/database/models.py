@@ -492,3 +492,247 @@ class Database:
                 "failed": row[2] or 0,
                 "by_channel": by_channel
             }
+
+    def get_top_performing_content(
+        self, limit: int = 10, days: int = 30
+    ) -> List[Dict[str, Any]]:
+        """참여율 기준 상위 콘텐츠 조회"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    c.id, c.channel_name, c.content_type, c.meme_text,
+                    c.created_at, a.platform, a.views, a.likes,
+                    a.comments, a.shares, a.engagement_rate
+                FROM contents c
+                JOIN analytics a ON c.id = a.content_id
+                WHERE c.created_at >= datetime('now', ?)
+                ORDER BY a.engagement_rate DESC, a.views DESC
+                LIMIT ?
+            """, (f"-{days} days", limit))
+
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    "content_id": row[0],
+                    "channel_name": row[1],
+                    "content_type": row[2],
+                    "meme_text": row[3],
+                    "created_at": row[4],
+                    "platform": row[5],
+                    "views": row[6],
+                    "likes": row[7],
+                    "comments": row[8],
+                    "shares": row[9],
+                    "engagement_rate": row[10]
+                })
+            return results
+
+    def get_platform_stats(self, days: int = 30) -> Dict[str, Dict[str, Any]]:
+        """플랫폼별 통계"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    u.platform,
+                    COUNT(DISTINCT u.content_id) as total_uploads,
+                    SUM(CASE WHEN u.status = 'success' THEN 1 ELSE 0 END) as success_count,
+                    SUM(CASE WHEN u.status = 'failed' THEN 1 ELSE 0 END) as failed_count,
+                    COALESCE(SUM(a.views), 0) as total_views,
+                    COALESCE(SUM(a.likes), 0) as total_likes,
+                    COALESCE(AVG(a.engagement_rate), 0) as avg_engagement
+                FROM uploads u
+                LEFT JOIN analytics a ON u.content_id = a.content_id AND u.platform = a.platform
+                JOIN contents c ON u.content_id = c.id
+                WHERE c.created_at >= datetime('now', ?)
+                GROUP BY u.platform
+            """, (f"-{days} days",))
+
+            results = {}
+            for row in cursor.fetchall():
+                results[row[0]] = {
+                    "total_uploads": row[1],
+                    "success_count": row[2],
+                    "failed_count": row[3],
+                    "total_views": row[4],
+                    "total_likes": row[5],
+                    "avg_engagement": row[6]
+                }
+            return results
+
+    def get_hourly_engagement(self, days: int = 30) -> Dict[int, Dict[str, float]]:
+        """시간대별 참여율 분석"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    CAST(strftime('%H', c.created_at) AS INTEGER) as hour,
+                    AVG(a.engagement_rate) as avg_engagement,
+                    AVG(a.views) as avg_views,
+                    COUNT(*) as count
+                FROM contents c
+                JOIN analytics a ON c.id = a.content_id
+                WHERE c.created_at >= datetime('now', ?)
+                GROUP BY hour
+                ORDER BY hour
+            """, (f"-{days} days",))
+
+            results = {}
+            for row in cursor.fetchall():
+                results[row[0]] = {
+                    "avg_engagement": row[1] or 0,
+                    "avg_views": row[2] or 0,
+                    "count": row[3]
+                }
+            return results
+
+    def get_hashtag_stats(self, days: int = 30) -> List[Dict[str, Any]]:
+        """해시태그별 성과 분석"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    c.hashtags, AVG(a.views) as avg_views,
+                    AVG(a.engagement_rate) as avg_engagement,
+                    COUNT(*) as count
+                FROM contents c
+                JOIN analytics a ON c.id = a.content_id
+                WHERE c.created_at >= datetime('now', ?)
+                AND c.hashtags IS NOT NULL AND c.hashtags != ''
+                GROUP BY c.hashtags
+                ORDER BY avg_engagement DESC
+            """, (f"-{days} days",))
+
+            results = []
+            hashtag_stats = {}
+
+            for row in cursor.fetchall():
+                try:
+                    hashtags = json.loads(row[0]) if row[0] else []
+                except json.JSONDecodeError:
+                    hashtags = []
+
+                for tag in hashtags:
+                    if tag not in hashtag_stats:
+                        hashtag_stats[tag] = {
+                            "total_views": 0,
+                            "total_engagement": 0,
+                            "count": 0
+                        }
+                    hashtag_stats[tag]["total_views"] += row[1] or 0
+                    hashtag_stats[tag]["total_engagement"] += row[2] or 0
+                    hashtag_stats[tag]["count"] += row[3]
+
+            for tag, stats in hashtag_stats.items():
+                if stats["count"] > 0:
+                    results.append({
+                        "hashtag": tag,
+                        "avg_views": stats["total_views"] / stats["count"],
+                        "avg_engagement": stats["total_engagement"] / stats["count"],
+                        "usage_count": stats["count"]
+                    })
+
+            results.sort(key=lambda x: x["avg_engagement"], reverse=True)
+            return results[:50]
+
+    def get_content_type_stats(self, days: int = 30) -> Dict[str, Dict[str, Any]]:
+        """콘텐츠 유형별 통계"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    c.content_type,
+                    COUNT(*) as count,
+                    AVG(a.views) as avg_views,
+                    AVG(a.engagement_rate) as avg_engagement,
+                    SUM(a.likes) as total_likes
+                FROM contents c
+                LEFT JOIN analytics a ON c.id = a.content_id
+                WHERE c.created_at >= datetime('now', ?)
+                GROUP BY c.content_type
+            """, (f"-{days} days",))
+
+            results = {}
+            for row in cursor.fetchall():
+                results[row[0]] = {
+                    "count": row[1],
+                    "avg_views": row[2] or 0,
+                    "avg_engagement": row[3] or 0,
+                    "total_likes": row[4] or 0
+                }
+            return results
+
+    def cleanup_old_data(self, days: int = 90, archive: bool = True) -> Dict[str, int]:
+        """오래된 데이터 정리"""
+        deleted = {"contents": 0, "uploads": 0, "analytics": 0, "trends": 0}
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cutoff = f"-{days} days"
+
+            # 오래된 analytics 삭제
+            cursor.execute("""
+                DELETE FROM analytics
+                WHERE recorded_at < datetime('now', ?)
+            """, (cutoff,))
+            deleted["analytics"] = cursor.rowcount
+
+            # 오래된 uploads 삭제
+            cursor.execute("""
+                DELETE FROM uploads
+                WHERE content_id IN (
+                    SELECT id FROM contents WHERE created_at < datetime('now', ?)
+                )
+            """, (cutoff,))
+            deleted["uploads"] = cursor.rowcount
+
+            # 오래된 contents 삭제
+            cursor.execute("""
+                DELETE FROM contents
+                WHERE created_at < datetime('now', ?)
+            """, (cutoff,))
+            deleted["contents"] = cursor.rowcount
+
+            # 오래된 trends 삭제
+            cursor.execute("""
+                DELETE FROM trends
+                WHERE recorded_at < datetime('now', ?)
+            """, (cutoff,))
+            deleted["trends"] = cursor.rowcount
+
+            conn.commit()
+
+            # 데이터베이스 최적화
+            cursor.execute("VACUUM")
+
+            logger.info(f"Cleanup completed: {deleted}")
+            return deleted
+
+    def get_weekday_engagement(self, days: int = 30) -> Dict[int, Dict[str, float]]:
+        """요일별 참여율 분석 (0=월요일, 6=일요일)"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    CAST(strftime('%w', c.created_at) AS INTEGER) as weekday,
+                    AVG(a.engagement_rate) as avg_engagement,
+                    AVG(a.views) as avg_views,
+                    COUNT(*) as count
+                FROM contents c
+                JOIN analytics a ON c.id = a.content_id
+                WHERE c.created_at >= datetime('now', ?)
+                GROUP BY weekday
+                ORDER BY weekday
+            """, (f"-{days} days",))
+
+            results = {}
+            for row in cursor.fetchall():
+                # SQLite의 %w: 0=일요일, 1=월요일...
+                # 파이썬 weekday: 0=월요일, 6=일요일로 변환
+                weekday = (row[0] - 1) % 7
+                results[weekday] = {
+                    "avg_engagement": row[1] or 0,
+                    "avg_views": row[2] or 0,
+                    "count": row[3]
+                }
+            return results

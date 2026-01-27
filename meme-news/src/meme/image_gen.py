@@ -399,3 +399,350 @@ class ImageGenerator:
         if template_path.exists():
             return Image.open(template_path)
         return None
+
+    # ===== 템플릿 시스템 =====
+
+    async def generate_with_template(
+        self,
+        content: "MemeContent",
+        template_name: str = None
+    ) -> Optional[str]:
+        """
+        템플릿을 사용하여 밈 이미지를 생성합니다.
+
+        Args:
+            content: MemeContent 객체
+            template_name: 템플릿 이름 (없으면 콘텐츠 타입에 맞게 자동 선택)
+
+        Returns:
+            생성된 이미지 경로 또는 None
+        """
+        try:
+            # 템플릿 설정 로드
+            template_config = self._get_template_config(template_name, content)
+
+            width, height = self.SHORTS_WIDTH, self.SHORTS_HEIGHT
+
+            # 1. 기본 배경 생성
+            image = self._create_template_background(width, height, template_config)
+
+            # 2. 오버레이 적용
+            if template_config.get("overlay"):
+                image = self._apply_overlay(image, template_config["overlay"])
+
+            # 3. 효과 적용
+            if template_config.get("effects"):
+                image = self._apply_effects(image, template_config["effects"])
+
+            draw = ImageDraw.Draw(image)
+
+            # 4. 텍스트 영역에 텍스트 추가
+            text_regions = template_config.get("text_regions", {})
+            self._render_template_text(draw, content, text_regions, width, height)
+
+            # 5. 장식 요소 추가
+            if template_config.get("decorations"):
+                self._add_decorations(image, draw, template_config["decorations"])
+
+            # 6. 워터마크
+            if content.channel_name and template_config.get("show_watermark", True):
+                self._add_watermark(draw, content.channel_name, width, height)
+
+            # 7. 저장
+            output_path = self._get_output_path(content.channel_name, "meme")
+            image.save(output_path, quality=95)
+            logger.info(f"Template meme image saved: {output_path}")
+
+            return str(output_path)
+
+        except Exception as e:
+            logger.error(f"Error generating template meme: {e}")
+            return None
+
+    def _get_template_config(
+        self,
+        template_name: str,
+        content: "MemeContent"
+    ) -> dict:
+        """템플릿 설정을 가져옵니다."""
+        templates = {
+            # 일상 밈 템플릿
+            "daily_simple": {
+                "background": {"type": "gradient", "preset": "sunset"},
+                "text_regions": {
+                    "top": {"y_ratio": 0.12, "font_size": 72, "style": "bold"},
+                    "bottom": {"y_ratio": 0.78, "font_size": 64, "style": "normal"},
+                },
+                "decorations": ["emoji_border"],
+            },
+            "daily_bold": {
+                "background": {"type": "gradient", "preset": "purple"},
+                "effects": [{"type": "vignette", "strength": 0.3}],
+                "text_regions": {
+                    "top": {"y_ratio": 0.15, "font_size": 80, "style": "bold"},
+                    "bottom": {"y_ratio": 0.72, "font_size": 72, "style": "bold"},
+                },
+            },
+            # 트렌드 밈 템플릿
+            "trend_breaking": {
+                "background": {"type": "gradient", "preset": "fire"},
+                "overlay": {"type": "noise", "opacity": 0.05},
+                "text_regions": {
+                    "header": {"y_ratio": 0.05, "font_size": 36, "text": "🔥 실시간 트렌드"},
+                    "top": {"y_ratio": 0.15, "font_size": 72, "style": "bold"},
+                    "bottom": {"y_ratio": 0.75, "font_size": 64, "style": "normal"},
+                },
+                "decorations": ["trending_badge"],
+            },
+            "trend_news": {
+                "background": {"type": "gradient", "preset": "night"},
+                "effects": [{"type": "blur", "radius": 2}],
+                "text_regions": {
+                    "header": {"y_ratio": 0.08, "font_size": 32, "text": "📰 뉴스 속보"},
+                    "top": {"y_ratio": 0.18, "font_size": 68, "style": "bold"},
+                    "bottom": {"y_ratio": 0.70, "font_size": 60, "style": "normal"},
+                },
+            },
+            # IT 밈 템플릿
+            "it_tech": {
+                "background": {"type": "gradient", "preset": "cool"},
+                "text_regions": {
+                    "header": {"y_ratio": 0.06, "font_size": 32, "text": "💻 테크 뉴스"},
+                    "top": {"y_ratio": 0.18, "font_size": 64, "style": "bold"},
+                    "bottom": {"y_ratio": 0.72, "font_size": 56, "style": "normal"},
+                },
+                "decorations": ["tech_border"],
+            },
+            # 기본 템플릿
+            "default": {
+                "background": {"type": "gradient", "preset": "random"},
+                "text_regions": {
+                    "top": {"y_ratio": 0.15, "font_size": 72, "style": "bold"},
+                    "bottom": {"y_ratio": 0.75, "font_size": 64, "style": "normal"},
+                },
+            },
+        }
+
+        # 템플릿 이름이 지정되면 해당 템플릿 사용
+        if template_name and template_name in templates:
+            return templates[template_name]
+
+        # 콘텐츠 타입에 따라 자동 선택
+        content_type = getattr(content, 'content_type', None)
+        if content_type:
+            type_value = content_type.value if hasattr(content_type, 'value') else str(content_type)
+            type_templates = {
+                "daily": ["daily_simple", "daily_bold"],
+                "trend": ["trend_breaking", "trend_news"],
+                "it": ["it_tech"],
+                "stock": ["it_tech"],
+            }
+            available = type_templates.get(type_value, ["default"])
+            selected = random.choice(available)
+            return templates.get(selected, templates["default"])
+
+        return templates["default"]
+
+    def _create_template_background(
+        self, width: int, height: int, config: dict
+    ) -> Image.Image:
+        """템플릿 배경을 생성합니다."""
+        bg_config = config.get("background", {"type": "gradient"})
+        bg_type = bg_config.get("type", "gradient")
+
+        if bg_type == "gradient":
+            preset = bg_config.get("preset", "random")
+            if preset == "random":
+                preset = random.choice(list(GRADIENT_PRESETS.keys()))
+            return self._create_gradient_background(width, height, preset=preset)
+
+        elif bg_type == "solid":
+            color = bg_config.get("color", (30, 30, 30))
+            return Image.new("RGB", (width, height), color)
+
+        elif bg_type == "image":
+            image_path = bg_config.get("path")
+            if image_path and Path(image_path).exists():
+                img = Image.open(image_path)
+                return img.resize((width, height), Image.Resampling.LANCZOS)
+
+        return self._create_gradient_background(width, height)
+
+    def _apply_overlay(self, image: Image.Image, overlay_config: dict) -> Image.Image:
+        """오버레이 효과를 적용합니다."""
+        overlay_type = overlay_config.get("type", "none")
+        opacity = overlay_config.get("opacity", 0.1)
+
+        if overlay_type == "noise":
+            # 노이즈 오버레이
+            noise = Image.new("RGB", image.size)
+            for x in range(image.width):
+                for y in range(image.height):
+                    gray = random.randint(0, 255)
+                    noise.putpixel((x, y), (gray, gray, gray))
+            return Image.blend(image, noise, opacity)
+
+        elif overlay_type == "darken":
+            dark = Image.new("RGB", image.size, (0, 0, 0))
+            return Image.blend(image, dark, opacity)
+
+        elif overlay_type == "lighten":
+            light = Image.new("RGB", image.size, (255, 255, 255))
+            return Image.blend(image, light, opacity)
+
+        return image
+
+    def _apply_effects(self, image: Image.Image, effects: list) -> Image.Image:
+        """이미지 효과를 적용합니다."""
+        for effect in effects:
+            effect_type = effect.get("type")
+
+            if effect_type == "blur":
+                radius = effect.get("radius", 2)
+                image = image.filter(ImageFilter.GaussianBlur(radius))
+
+            elif effect_type == "vignette":
+                strength = effect.get("strength", 0.3)
+                image = self._add_vignette(image, strength)
+
+            elif effect_type == "sharpen":
+                image = image.filter(ImageFilter.SHARPEN)
+
+            elif effect_type == "contrast":
+                from PIL import ImageEnhance
+                factor = effect.get("factor", 1.2)
+                enhancer = ImageEnhance.Contrast(image)
+                image = enhancer.enhance(factor)
+
+            elif effect_type == "brightness":
+                from PIL import ImageEnhance
+                factor = effect.get("factor", 1.1)
+                enhancer = ImageEnhance.Brightness(image)
+                image = enhancer.enhance(factor)
+
+        return image
+
+    def _add_vignette(self, image: Image.Image, strength: float = 0.3) -> Image.Image:
+        """비네트 효과를 추가합니다."""
+        width, height = image.size
+
+        # 마스크 생성
+        mask = Image.new("L", (width, height), 255)
+        mask_draw = ImageDraw.Draw(mask)
+
+        # 타원형 그라데이션
+        for i in range(min(width, height) // 2):
+            ratio = i / (min(width, height) // 2)
+            alpha = int(255 * (1 - strength * (1 - ratio)))
+            mask_draw.ellipse(
+                [i, i, width - i, height - i],
+                outline=alpha
+            )
+
+        # 블러 처리된 마스크
+        mask = mask.filter(ImageFilter.GaussianBlur(30))
+
+        # 검은색 오버레이와 합성
+        dark = Image.new("RGB", (width, height), (0, 0, 0))
+        result = Image.composite(dark, image, mask)
+
+        return result
+
+    def _render_template_text(
+        self,
+        draw: ImageDraw.Draw,
+        content: "MemeContent",
+        text_regions: dict,
+        width: int,
+        height: int
+    ) -> None:
+        """템플릿의 텍스트 영역에 텍스트를 렌더링합니다."""
+        for region_name, region_config in text_regions.items():
+            y_ratio = region_config.get("y_ratio", 0.5)
+            y_position = int(height * y_ratio)
+            font_size = region_config.get("font_size", 64)
+            style = region_config.get("style", "normal")
+
+            # 텍스트 결정
+            text = region_config.get("text")  # 고정 텍스트
+            if not text:
+                if region_name == "top":
+                    text = content.top_text or ""
+                elif region_name == "bottom":
+                    text = content.bottom_text or ""
+                elif region_name == "header":
+                    text = ""
+                else:
+                    text = ""
+
+            if not text:
+                continue
+
+            # 스타일에 따른 설정
+            stroke_width = 4 if style == "bold" else 2
+            text_color = region_config.get("color", "white")
+            stroke_color = region_config.get("stroke_color", "black")
+
+            self._add_meme_text(
+                draw, text, width,
+                y_position=y_position,
+                font_size=font_size,
+                max_width=width - 80,
+                text_color=text_color,
+                stroke_color=stroke_color,
+                stroke_width=stroke_width
+            )
+
+    def _add_decorations(
+        self,
+        image: Image.Image,
+        draw: ImageDraw.Draw,
+        decorations: list
+    ) -> None:
+        """장식 요소를 추가합니다."""
+        width, height = image.size
+
+        for decoration in decorations:
+            if decoration == "emoji_border":
+                # 이모지 테두리 (상단)
+                emojis = "✨🔥💯🎉⚡"
+                font = self._get_font(40)
+                emoji_text = " ".join(random.choices(list(emojis), k=5))
+                bbox = draw.textbbox((0, 0), emoji_text, font=font)
+                text_width = bbox[2] - bbox[0]
+                x = (width - text_width) // 2
+                draw.text((x, 30), emoji_text, font=font, fill="white")
+
+            elif decoration == "trending_badge":
+                # 트렌딩 배지
+                badge_text = "🔥 TRENDING"
+                font = self._get_font(32)
+                # 배경 사각형
+                draw.rectangle([30, 30, 220, 80], fill=(255, 0, 0, 200))
+                draw.text((45, 40), badge_text, font=font, fill="white")
+
+            elif decoration == "tech_border":
+                # 테크 스타일 보더
+                line_color = (0, 255, 255)
+                draw.line([(40, 40), (width - 40, 40)], fill=line_color, width=2)
+                draw.line([(40, height - 40), (width - 40, height - 40)], fill=line_color, width=2)
+
+    def get_available_templates(self) -> list:
+        """사용 가능한 템플릿 목록을 반환합니다."""
+        return [
+            "daily_simple", "daily_bold",
+            "trend_breaking", "trend_news",
+            "it_tech", "default"
+        ]
+
+    async def generate_batch(
+        self,
+        contents: list,
+        template_name: str = None
+    ) -> list:
+        """여러 콘텐츠에 대해 이미지를 배치 생성합니다."""
+        results = []
+        for content in contents:
+            path = await self.generate_with_template(content, template_name)
+            results.append(path)
+        return results
